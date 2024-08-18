@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-
+import { ThemeProvider } from "@/providers/theme-provider";
+import Navbar from "./components/ui/Navbar"
+import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -15,8 +17,28 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+    <head/>
+    <body className={inter.className}>
+    <div className="h-[50rem] w-full dark:bg-black bg-white  dark:bg-grid-white/[0.1] bg-grid-black/[0.1] relative dark:text-white text-black">
+      {/* Radial gradient for the container to give a faded look */}
+      {/* <div className="absolute pointer-events-none inset-0  dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_15%,black)]"></div> */}
+      
+    <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+    >
+      <div className="relative">
+      <Navbar/>
+      </div>
+      {children}
+      {/* <Toaster/> */}
+    </ThemeProvider>
+    </div>
+    <Toaster />
+    </body>
     </html>
   );
 }

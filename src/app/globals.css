@@ -30,4 +30,16 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+
+  .filter {
+    filter: invert(20%) sepia(100%) saturate(5000%) hue-rotate(180deg) brightness(100%) contrast(100%);
+  }
+
+  .shadow-custom-shadow {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.1); /* Lighter shadow */
+  }
+
+  .shadow-custom-shadow-dark {
+    box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2), 0 4px 8px rgba(255, 255, 255, 0.1); /* Lighter shadow in dark mode */
+  }
 }
