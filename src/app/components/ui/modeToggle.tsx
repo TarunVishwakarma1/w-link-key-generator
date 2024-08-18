@@ -7,25 +7,29 @@ import { useTheme } from "next-themes";
 
 export default function App() {
   const { setTheme, theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
+  const [getTheme, setGetTheme] = useState(Boolean);
   // When mounted on client, now we can show the UI
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  React.useEffect(() => {
+    if (theme === "dark") {
+      document.body.classList.add("dark");
+      setTheme('dark');
+      setGetTheme(false)
+    } else {
+      document.body.classList.remove("dark");
+      setTheme('light');
+      setGetTheme(true)
+    }
+  }, [theme]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
   // Ensure theme is set based on initial load
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <Switch
-      defaultSelected={theme === 'dark'?false:true}
+      isSelected={getTheme}
       size="md"
       color="success"
       startContent={<SunIcon />}

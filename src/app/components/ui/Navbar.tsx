@@ -3,6 +3,7 @@ import React from "react";
 import {Navbar, NavbarBrand, NavbarContent, NavbarItem, Link, Button, NavbarMenu,NavbarMenuItem, NavbarMenuToggle} from "@nextui-org/react";
 import {Logo as AcmeLogo} from "./icons/Logo"
 import ModeToggle from "./modeToggle"
+import { motion } from "framer-motion";
 
 export default function App() {
 
@@ -22,6 +23,11 @@ export default function App() {
       ];
 
   return (
+    <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
     <Navbar shouldHideOnScroll onMenuOpenChange={setIsMenuOpen} >
     <NavbarContent>
         <NavbarMenuToggle aria-label={isMenuOpen?"Close menu":"Open menu"} className="sm:hidden"/>
@@ -39,7 +45,9 @@ export default function App() {
       </NavbarContent>
       <NavbarContent justify="end">
         <NavbarItem>
-        <ModeToggle/> {/**dark and light mode toggle*/}
+        
+          <ModeToggle />
+        
         </NavbarItem>
       </NavbarContent>
       <NavbarMenu>
@@ -59,5 +67,6 @@ export default function App() {
         ))}
       </NavbarMenu>
     </Navbar>
+    </motion.div>
   );
 }

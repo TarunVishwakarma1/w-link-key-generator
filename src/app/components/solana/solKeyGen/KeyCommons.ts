@@ -45,7 +45,7 @@ type VerifyTransactionProps = {
     publicKey:string
 }
 
-function encryptPrivateKey({ privateKey, password }: EncryptProps) {
+function encryptValue({ privateKey, password }: EncryptProps) {
   if (!privateKey || !password) {
     throw new Error('No Password or private key provided');
   }
@@ -151,4 +151,4 @@ function verifyTransaction({message, signature, publicKey}:VerifyTransactionProp
     return nacl.sign.detached.verify(decodedMessage,signature,pubKey);
 }
 
-export { encryptPrivateKey, decryptKey, storeKeys, retrieveKeys, KeyGenerate, signature,verifyTransaction };
+export { encryptValue, decryptKey, storeKeys, retrieveKeys, KeyGenerate, signature,verifyTransaction };
