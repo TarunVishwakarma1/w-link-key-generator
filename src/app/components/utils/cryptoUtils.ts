@@ -76,3 +76,33 @@ function stringToArrayBuffer(str: string): ArrayBuffer {
     return new TextDecoder().decode(decrypted);
   }
   
+  export async function encryptWallets(value: string, password: string): Promise<string> {
+    const salt = crypto.getRandomValues(new Uint8Array(16)); // 16 bytes salt
+    const iv = crypto.getRandomValues(new Uint8Array(16));   // 16 bytes IV
+    const key = await deriveKey(password, salt.buffer);
+  
+    const encrypted = await crypto.subtle.encrypt(
+      { name: 'AES-CTR', counter: iv, length: 64 },
+      key,
+      stringToArrayBuffer(value)
+    );
+  
+    return `${arrayBufferToHex(salt.buffer)}:${arrayBufferToHex(iv.buffer)}:${arrayBufferToHex(encrypted)}`;
+  }
+
+  export async function decryptWallets(encryptedValue: string, password: string): Promise<string> {
+    const [saltHex, ivHex, encryptedHex] = encryptedValue.split(':');
+  
+    const salt = hexToArrayBuffer(saltHex);
+    const iv = hexToArrayBuffer(ivHex);
+    const encrypted = hexToArrayBuffer(encryptedHex);
+    const key = await deriveKey(password, salt);
+  
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-CTR', counter: iv, length: 64 },
+      key,
+      encrypted
+    );
+  
+    return new TextDecoder().decode(decrypted);
+  }

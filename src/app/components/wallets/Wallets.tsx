@@ -1,30 +1,54 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react";
 import { toast } from 'sonner';
-import { encryptValue, decryptValue } from '../utils/cryptoUtils'; // Adjust the path to your utility functions
-import CardComponent from '../ui/assets/ui-components/CardComponent'
-import SolanaLogo from '../ui/assets/images/solana-sol-logo.svg'
+import { encryptWallets, decryptWallets } from '../utils/cryptoUtils';
+import CardComponent from '../ui/assets/ui-components/CardComponent';
+import SolanaLogo from '../ui/assets/images/solana-sol-logo.svg';
+import EthereumLogo from '../ui/assets/images/ethereum-eth-logo.svg';
 
 interface KeyGenerateResult {
   mnemonic: string;
   secretKey: string;
   publicKey: string;
   type: string;
-  walletName: string; // Added walletName field
+  walletName: string;
 }
 
 const Wallets: React.FC = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const LOCAL_STORAGE_KEY = "WlinkSolanaWallets";
+  const SOLANA_STORAGE_KEY = "WlinkSolanaWallets";
+  const ETHEREUM_STORAGE_KEY = "WlinkEthereumWallets";
   const PASSWORD_STORAGE_KEY = "wLinkSolPass";
   const [wallets, setWallets] = useState<KeyGenerateResult[]>([]);
 
   useEffect(() => {
-    const storedWallets = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (storedWallets) {
-      setWallets(JSON.parse(storedWallets));
-    }
+    const loadWallets = async () => {
+      const storedSolanaWallets = localStorage.getItem(SOLANA_STORAGE_KEY);
+      const storedEthereumWallets = localStorage.getItem(ETHEREUM_STORAGE_KEY);
+      const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
+
+      if (password) {
+        try {
+          const decryptedSolanaWallets = storedSolanaWallets
+            ? await decryptWallets(storedSolanaWallets, password)
+            : "[]";
+          const decryptedEthereumWallets = storedEthereumWallets
+            ? await decryptWallets(storedEthereumWallets, password)
+            : "[]";
+
+          const solanaWallets = JSON.parse(decryptedSolanaWallets);
+          const ethereumWallets = JSON.parse(decryptedEthereumWallets);
+
+          setWallets([...solanaWallets, ...ethereumWallets]);
+        } catch (error) {
+          toast.error('Failed to decrypt wallets.');
+          console.error('Decryption error:', error);
+        }
+      }
+    };
+
+    loadWallets();
   }, []);
 
   const handleOpenModal = () => {
@@ -32,31 +56,59 @@ const Wallets: React.FC = () => {
   };
 
   const handleBackup = async () => {
-    const wallets = localStorage.getItem(LOCAL_STORAGE_KEY);
-    const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
-
-    if (!wallets || !password) {
-      toast.error('No wallets found to backup or password missing.');
+    const storedSolanaWallets = localStorage.getItem(SOLANA_STORAGE_KEY);
+    const storedEthereumWallets = localStorage.getItem(ETHEREUM_STORAGE_KEY);
+  
+    // If there are no wallets in local storage, show an error message
+    if (!storedSolanaWallets && !storedEthereumWallets) {
+      toast.error('No wallets found to backup.');
       return;
     }
-
+  
     try {
-      const encryptedWallets = await encryptValue(wallets, password);
-      const blob = new Blob([encryptedWallets], { type: 'application/json' });
+      // Decrypt the stored wallets if they exist, otherwise initialize as empty arrays
+      const solanaWallets = storedSolanaWallets
+        ? JSON.parse(await decryptWallets(storedSolanaWallets, localStorage.getItem(PASSWORD_STORAGE_KEY)!))
+        : [];
+  
+      const ethereumWallets = storedEthereumWallets
+        ? JSON.parse(await decryptWallets(storedEthereumWallets, localStorage.getItem(PASSWORD_STORAGE_KEY)!))
+        : [];
+  
+      // Check if both arrays are empty
+      if (solanaWallets.length === 0 && ethereumWallets.length === 0) {
+        toast.error('No wallets found to backup.');
+        return;
+      }
+  
+      // Combine the wallets into a single object
+      const combinedWallets = {
+        solana: solanaWallets,
+        ethereum: ethereumWallets,
+      };
+  
+      // Encrypt the combined wallets object
+      const encryptedCombinedWallets = await encryptWallets(JSON.stringify(combinedWallets), localStorage.getItem(PASSWORD_STORAGE_KEY)!);
+      
+      // Create a downloadable file from the encrypted data
+      const blob = new Blob([encryptedCombinedWallets], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'solana_wallets_backup.json';
+      link.download = 'wlink_wallets_backup.json';
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+  
+      // Show a success message
       toast.success('Backup successful!');
     } catch (error) {
-      toast.error('Failed to encrypt wallets for backup.');
-      console.error('Encryption error:', error);
+      toast.error('Failed to backup wallets.');
+      console.error('Backup error:', error);
     }
   };
+  
 
   const handleRestoreClick = () => {
     if (fileInputRef.current) {
@@ -67,59 +119,80 @@ const Wallets: React.FC = () => {
   const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
+  
     if (file.type !== 'application/json') {
       toast.error('Invalid file type. Please upload a JSON file.');
       return;
     }
-
+  
     const reader = new FileReader();
     reader.onload = async () => {
-      const content = reader.result as string;
+      let backupEncryptedContent = reader.result as string;
       const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
-
+  
       if (!password) {
         toast.error('No password found in local storage.');
         return;
       }
-
+  
       try {
-        const decryptedContent = await decryptValue(content, password);
-        const parsedWallets = JSON.parse(decryptedContent);
-
-        if (!Array.isArray(parsedWallets)) {
-          throw new Error('Invalid file structure: Expected an array of wallets.');
-        }
-
-        const isValid = parsedWallets.every((wallet) =>
-          wallet &&
-          typeof wallet === 'object' &&
-          'publicKey' in wallet &&
-          'secretKey' in wallet &&
-          'mnemonic' in wallet &&
-          'walletName' in wallet // Check for walletName field
-        );
-
-        if (!isValid) {
-          throw new Error('Invalid wallet data in file.');
-        }
-
-        const existingWallets = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '[]');
-
-        // Create a set of existing wallet private keys for quick lookup
-        const existingWalletKeys = new Set(existingWallets.map((wallet: any) => wallet.secretKey));
-
-        const newWallets = parsedWallets.filter(
-          (wallet: any) => !existingWalletKeys.has(wallet.secretKey)
-        );
-
-        if (newWallets.length === 0) {
-          toast('All wallets in the backup already exist.');
+        const decryptedBackupContent = JSON.parse(await decryptWallets(backupEncryptedContent, password));
+        console.log(`decryptedBackupContent ${JSON.stringify(decryptedBackupContent)}`);
+        let solanaBackupWallets = [];
+        let ethereumBackupWallets = [];
+  
+        if (Array.isArray(decryptedBackupContent)) {
+          if (decryptedBackupContent[0].type === 'solana') {
+            solanaBackupWallets = decryptedBackupContent;
+          } else {
+            ethereumBackupWallets = decryptedBackupContent;
+          }
         } else {
-          const updatedWallets = [...existingWallets, ...newWallets];
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedWallets));
-          setWallets(updatedWallets); // Update the state with the new wallets
-          toast.success(`${newWallets.length} wallets restored successfully.`);
+          // When it's an object with solana and ethereum arrays
+          solanaBackupWallets = decryptedBackupContent.solana || [];
+          ethereumBackupWallets = decryptedBackupContent.ethereum || [];
+        }
+  
+        // Decrypt existing wallets or initialize as empty arrays if none exist
+        const storedSolanaWallets = localStorage.getItem(SOLANA_STORAGE_KEY);
+        const storedEthereumWallets = localStorage.getItem(ETHEREUM_STORAGE_KEY);
+  
+        const currentSolanaWallets = storedSolanaWallets
+          ? JSON.parse(await decryptWallets(storedSolanaWallets, password))
+          : [];
+  
+        const currentEthereumWallets = storedEthereumWallets
+          ? JSON.parse(await decryptWallets(storedEthereumWallets, password))
+          : [];
+  
+        // Merge wallets and avoid duplicates
+        const existingSolanaKeys = new Set(currentSolanaWallets.map((wallet: any) => wallet.secretKey));
+        const newSolanaWallets = solanaBackupWallets.filter((wallet: any) => !existingSolanaKeys.has(wallet.secretKey));
+        const updatedSolanaWallets = [...currentSolanaWallets, ...newSolanaWallets];
+  
+        const existingEthereumKeys = new Set(currentEthereumWallets.map((wallet: any) => wallet.secretKey));
+        const newEthereumWallets = ethereumBackupWallets.filter((wallet: any) => !existingEthereumKeys.has(wallet.secretKey));
+        const updatedEthereumWallets = [...currentEthereumWallets, ...newEthereumWallets];
+  
+        // Count of successfully restored wallets
+        const restoredSolanaCount = newSolanaWallets.length;
+        const restoredEthereumCount = newEthereumWallets.length;
+  
+        // Encrypt and store the updated wallets
+        const encryptedSolanaWallets = await encryptWallets(JSON.stringify(updatedSolanaWallets), password);
+        const encryptedEthereumWallets = await encryptWallets(JSON.stringify(updatedEthereumWallets), password);
+  
+        localStorage.setItem(SOLANA_STORAGE_KEY, encryptedSolanaWallets);
+        localStorage.setItem(ETHEREUM_STORAGE_KEY, encryptedEthereumWallets);
+  
+        // Update the UI with the combined wallets
+        setWallets([...updatedSolanaWallets, ...updatedEthereumWallets]);
+  
+        // Display success message with count of restored wallets
+        if (restoredSolanaCount === 0 && restoredEthereumCount === 0) {
+          toast('No new wallets were restored. All wallets already exist.');
+        } else {
+          toast.success(`${restoredSolanaCount + restoredEthereumCount} wallets restored successfully.`);
         }
       } catch (error) {
         console.error("Failed to restore wallets:", error);
@@ -127,11 +200,10 @@ const Wallets: React.FC = () => {
       }
     };
     reader.readAsText(file);
-
-    // Reset the input value to allow re-uploading the same file if needed
-    event.target.value = '';
-  };
-
+  
+    event.target.value = ''; // Reset the input value to allow re-uploading the same file if needed
+  };  
+  
   return (
     <div className="grid grid-cols-4 gap-4 p-4">
       <div className="text-4xl font-semibold col-span-3">
@@ -157,6 +229,7 @@ const Wallets: React.FC = () => {
                     <p>
                       Do you want to restore wallets from a backup file?
                     </p>
+                    <p>Please note that the password in old wallets and password in new wallets should match or the restore will fail.</p>
                     <Button color="primary" variant="shadow" onPress={handleRestoreClick}>
                       Restore
                     </Button>
@@ -188,7 +261,7 @@ const Wallets: React.FC = () => {
       ) : (
         wallets.map((data, index) => (
           <div className='mt-10 break-words' key={index}>
-            <CardComponent image={SolanaLogo} BalanceAmountData={0.001} keysData={data} index={index} />
+            <CardComponent image={data.type === 'solana' ? SolanaLogo : data.type === 'Ethereum' ? EthereumLogo : ''} BalanceAmountData={1.001} keysData={data} index={index} />
           </div>
         ))
       )}

@@ -1,10 +1,11 @@
 import nacl from "tweetnacl";
-import { generateMnemonic, mnemonicToSeedSync } from "bip39";
+import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import crypto from 'crypto';
 import * as aesjs from 'aes-js';
 import bs58 from 'bs58';
+import { toast } from "sonner";
 
 type EncryptProps = {
     privateKey?: string;
@@ -116,6 +117,12 @@ function KeyGenerate({ state, mnemonic }: keyGenerateProps) {
     if (!mnemonic) {
         mnemonic = generateMnemonic();
     }
+
+    if(!validateMnemonic(mnemonic)){
+        toast('Invalid mnemonic phrase');
+        return;
+    }
+    
     const seed = mnemonicToSeedSync(mnemonic);
     const path = `m/44'/501'/${state}'/0'`;
     const { key: derivedSeed } = derivePath(path, seed.toString('hex'));
