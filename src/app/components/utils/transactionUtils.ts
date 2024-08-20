@@ -34,22 +34,26 @@ interface EthereumTransactionResponse {
   };
 }
 
-
-
+// Utility function to convert hex to Uint8Array for Solana private keys
 function hexToUint8Array(hex: string): Uint8Array {
-    if (hex.startsWith("0x")) {
-      hex = hex.slice(2);
-    }
-    const bytes = [];
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes.push(parseInt(hex.substr(i, 2), 16));
-    }
-    return new Uint8Array(bytes);
+  if (hex.startsWith("0x")) {
+    hex = hex.slice(2);
   }
+  const bytes = [];
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes.push(parseInt(hex.substr(i, 2), 16));
+  }
+  return new Uint8Array(bytes);
+}
+
+function numberToUint8Array(number: number): Uint8Array {
+    const hexString = number.toString(16).padStart(2, '0');
+    const uint8Array = new Uint8Array(hexString.match(/.{1,2}/g)?.map(byte => parseInt(byte, 16)) || []);
+    return uint8Array;
+}
 
 
 // Solana Transactions
-
 export const getSolanaTransactions = async (publicKey: string): Promise<string[]> => {
   const url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
   const requestBody = {
@@ -101,7 +105,6 @@ export const fetchSolanaTransactionHistory = async (publicKey: string): Promise<
 };
 
 // Ethereum Transactions
-
 export const getEthereumTransactions = async (publicKey: string): Promise<EthereumTransfer[]> => {
   const url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
   const requestBody = {
@@ -131,7 +134,6 @@ export const getEthereumTransactions = async (publicKey: string): Promise<Ethere
 };
 
 // Combined Transaction History Fetcher
-
 export const fetchTransactionHistory = async (publicKey: string, type: 'solana' | 'Ethereum'): Promise<any[]> => {
   if (type === 'solana') {
     return await fetchSolanaTransactionHistory(publicKey);
@@ -144,69 +146,69 @@ export const fetchTransactionHistory = async (publicKey: string, type: 'solana' 
 
 // Function to send Solana
 export const sendSolana = async (privateKeyHex: string, recipientAddress: string, amountToSend: number) => {
-    try {
-      const privateKey = hexToUint8Array(privateKeyHex); // Convert the hex key to Uint8Array
-  
-      const connection = new Connection("https://api.mainnet-beta.solana.com");
-      const fromKeypair = Keypair.fromSecretKey(privateKey); // Create Keypair from private key
-      const fromPubKey = fromKeypair.publicKey;
-      const toPubKey = new PublicKey(recipientAddress);
-  
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: fromPubKey,
-          toPubkey: toPubKey,
-          lamports: Math.floor(amountToSend * 1_000_000_000), // Convert SOL to Lamports
-        })
-      );
-  
-      const { blockhash } = await connection.getRecentBlockhash();
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = fromPubKey;
-  
-      // Sign the transaction with the Keypair
-      transaction.sign(fromKeypair);
-  
-      // Serialize the transaction
-      const serializedTransaction = transaction.serialize();
-  
-      // Send the serialized transaction
-      const signature = await connection.sendRawTransaction(serializedTransaction);
-  
-      await connection.confirmTransaction(signature);
-      toast('Transaction successful!');
-      return true;
-    } catch (error) {
-      console.error("Error sending Solana:", error);
-      toast('Failed to send Solana.');
-      return false;
-    }
-  };
-  
-  // Function to send Ethereum
-  export const sendEthereum = async (privateKey: string, recipientAddress: string, amountToSend: number) => {
-    try {
-      // Connect to the Ethereum network
-      const provider = ethers.getDefaultProvider('mainnet'); // Replace 'mainnet' with your desired network
-  
-      // Create a wallet instance using the provided private key and provider
-      const wallet = new ethers.Wallet(privateKey, provider);
-  
-      const tx = {
-        to: recipientAddress,
-        value: ethers.utils.parseEther(amountToSend.toString()), // Convert ETH to Wei
-        gasLimit: ethers.utils.hexlify(21000), // Gas limit for a standard ETH transfer
-      };
-  
-      // Sign and send the transaction
-      const transactionResponse = await wallet.sendTransaction(tx);
-      await transactionResponse.wait(); // Wait for the transaction to be mined
-  
-      toast('Transaction successful!');
-      return true;
-    } catch (error) {
-      console.error("Error sending Ethereum:", error);
-      toast('Failed to send Ethereum.');
-      return false;
-    }
-  };
+  try {
+    const privateKey = hexToUint8Array(privateKeyHex); // Convert the hex key to Uint8Array
+
+    const connection = new Connection("https://api.mainnet-beta.solana.com");
+    const fromKeypair = Keypair.fromSecretKey(privateKey); // Create Keypair from private key
+    const fromPubKey = fromKeypair.publicKey;
+    const toPubKey = new PublicKey(recipientAddress);
+
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: fromPubKey,
+        toPubkey: toPubKey,
+        lamports: Math.floor(amountToSend * 1_000_000_000), // Convert SOL to Lamports
+      })
+    );
+
+    const { blockhash } = await connection.getRecentBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = fromPubKey;
+
+    // Sign the transaction with the Keypair
+    transaction.sign(fromKeypair);
+
+    // Serialize the transaction
+    const serializedTransaction = transaction.serialize();
+
+    // Send the serialized transaction
+    const signature = await connection.sendRawTransaction(serializedTransaction);
+
+    await connection.confirmTransaction(signature);
+    toast('Transaction successful!');
+    return true;
+  } catch (error) {
+    console.error("Error sending Solana:", error);
+    toast('Failed to send Solana.');
+    return false;
+  }
+};
+
+// Function to send Ethereum
+export const sendEthereum = async (privateKey: string, recipientAddress: string, amountToSend: number) => {
+  try {
+    // Connect to the Ethereum network
+    const provider = ethers.getDefaultProvider('mainnet'); // Replace 'mainnet' with your desired network
+
+    // Create a wallet instance using the provided private key and provider
+    const wallet = new ethers.Wallet(privateKey, provider);
+
+    const tx = {
+      to: recipientAddress,
+      value: ethers.parseEther(amountToSend.toString()), // Convert ETH to Wei
+      gasLimit: ethers.hexlify(numberToUint8Array(21000)), // Gas limit for a standard ETH transfer
+    };
+
+    // Sign and send the transaction
+    const transactionResponse = await wallet.sendTransaction(tx);
+    await transactionResponse.wait(); // Wait for the transaction to be mined
+
+    toast('Transaction successful!');
+    return true;
+  } catch (error) {
+    console.error("Error sending Ethereum:", error);
+    toast('Failed to send Ethereum.');
+    return false;
+  }
+};
