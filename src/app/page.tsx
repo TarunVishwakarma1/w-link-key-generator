@@ -35,10 +35,10 @@ const [selected, setSelected] = useState<'solana' | 'ethereum' | 'wallet'>('wall
     const storagePass = localStorage.getItem('wLinkSolPass');
     if (storagePass) {
       setModalHeader('Provide Password');
-      setModalBody('Password found in local storage. Please provide your password.');
+      setModalBody('Password found. Please provide your password.');
     } else {
       setModalHeader('Enter New Password');
-      setModalBody('No password found in local storage. Please set a new password.');
+      setModalBody('No password found. Please set a new password.');
     }
     onOpen();
   };
