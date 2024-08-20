@@ -17,7 +17,7 @@ export async function POST(request) {
         params: [publicKey],
       };
 
-      console.log(url)
+      
     } else if (type === 'Ethereum') {
       url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
       requestBody = {
@@ -26,7 +26,7 @@ export async function POST(request) {
         params: [publicKey, "latest"],
         method: "eth_getBalance"
       };
-      console.log(url)
+     
     }
 
     const response = await axios.post(url, requestBody);
