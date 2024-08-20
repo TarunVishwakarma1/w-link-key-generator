@@ -18,58 +18,58 @@ export default function CardComponent({ image, keysData, index }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [recipientAddress, setRecipientAddress] = useState('');
 
-  // useEffect(() => {
-  //   const fetchBalance = async () => {
-  //     try {
-  //       let url = '';
-  //       let requestBody = {};
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        let url = '';
+        let requestBody = {};
 
-  //       if (keysData.type === 'solana') {
-  //         url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
-  //         requestBody = {
-  //           jsonrpc: "2.0",
-  //           id: 1,
-  //           method: "getBalance",
-  //           params: [keysData.publicKey],
-  //         };
-  //       } else if (keysData.type === 'ethereum') {
-  //         url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
-  //         requestBody = {
-  //           id: 1,
-  //           jsonrpc: "2.0",
-  //           params: [
-  //             keysData.publicKey,
-  //             "latest"
-  //           ],
-  //           method: "eth_getBalance"
-  //         };
-  //       }
+        if (keysData.type === 'solana') {
+          url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+          requestBody = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "getBalance",
+            params: [keysData.publicKey],
+          };
+        } else if (keysData.type === 'ethereum') {
+          url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+          requestBody = {
+            id: 1,
+            jsonrpc: "2.0",
+            params: [
+              keysData.publicKey,
+              "latest"
+            ],
+            method: "eth_getBalance"
+          };
+        }
 
-  //       const response = await axios.post(url, requestBody);
-  //       let balance = 0;
+        const response = await axios.post(url, requestBody);
+        let balance = 0;
 
-  //       if (keysData.type === 'solana') {
-  //         const lamports = response.data.result.value;
-  //         balance = lamports / 1_000_000_000; // Convert lamports to SOL
-  //       } else if (keysData.type === 'ethereum') {
-  //         const wei = parseInt(response.data.result, 16); // Convert hex to decimal
-  //         balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
-  //       }
+        if (keysData.type === 'solana') {
+          const lamports = response.data.result.value;
+          balance = lamports / 1_000_000_000; // Convert lamports to SOL
+        } else if (keysData.type === 'ethereum') {
+          const wei = parseInt(response.data.result, 16); // Convert hex to decimal
+          balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
+        }
 
-  //       setBalanceAmountData(balance);
-  //     } catch (error) {
-  //       console.error("Error fetching balance:", error);
-  //       toast('Failed to fetch balance');
-  //     }
-  //   };
+        setBalanceAmountData(balance);
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+        toast('Failed to fetch balance');
+      }
+    };
 
-  //   // Fetch balance immediately and then set up interval
-  //   fetchBalance();
-  //   const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
+    // Fetch balance immediately and then set up interval
+    fetchBalance();
+    const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
 
-  //   // Clear the interval when the component is unmounted
-  //   return () => clearInterval(intervalId);
-  // }, [keysData.publicKey, keysData.type]);
+    // Clear the interval when the component is unmounted
+    return () => clearInterval(intervalId);
+  }, [keysData.publicKey, keysData.type]);
 
   const handleOpenModalClickPublicKey = (header, data) => {
     setModalHeader(header);
