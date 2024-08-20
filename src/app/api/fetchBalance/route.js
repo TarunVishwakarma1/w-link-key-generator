@@ -1,14 +1,10 @@
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-export default async function handler(req, res) {
-  // Ensure the method is POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  const { publicKey, type } = req.body;
-
+export async function POST(request) {
   try {
+    const { publicKey, type } = await request.json();
+
     let url = '';
     let requestBody = {};
 
@@ -20,7 +16,9 @@ export default async function handler(req, res) {
         method: "getBalance",
         params: [publicKey],
       };
-    } else if (type === 'ethereum') {
+
+      console.log(url)
+    } else if (type === 'Ethereum') {
       url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
       requestBody = {
         id: 1,
@@ -28,12 +26,13 @@ export default async function handler(req, res) {
         params: [publicKey, "latest"],
         method: "eth_getBalance"
       };
+      console.log(url)
     }
 
     const response = await axios.post(url, requestBody);
-    res.status(200).json(response.data);
+    return NextResponse.json(response.data);
   } catch (error) {
     console.error("Error fetching balance:", error.response ? error.response.data : error.message);
-    res.status(500).json({ error: "Failed to fetch balance" });
+    return NextResponse.json({ error: "Failed to fetch balance" }, { status: 500 });
   }
 }

@@ -18,37 +18,37 @@ export default function CardComponent({ image, keysData, index }) {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [recipientAddress, setRecipientAddress] = useState('');
 
-  // useEffect(() => {
-  //   const fetchBalance = async () => {
-  //     try {
-  //       const response = await axios.post('/api/fetchBalance', {
-  //         publicKey: keysData.publicKey,
-  //         type: keysData.type
-  //       });
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const response = await axios.post('/api/fetchBalance', {
+          publicKey: keysData.publicKey,
+          type: keysData.type
+        });
 
-  //       let balance = 0;
+        let balance = 0;
 
-  //       if (keysData.type === 'solana') {
-  //         const lamports = response.data.result.value;
-  //         balance = lamports / 1_000_000_000; // Convert lamports to SOL
-  //       } else if (keysData.type === 'ethereum') {
-  //         const wei = parseInt(response.data.result, 16); // Convert hex to decimal
-  //         balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
-  //       }
+        if (keysData.type === 'solana') {
+          const lamports = response.data.result.value;
+          balance = lamports / 1_000_000_000; // Convert lamports to SOL
+        } else if (keysData.type === 'ethereum') {
+          const wei = parseInt(response.data.result, 16); // Convert hex to decimal
+          balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
+        }
 
-  //       setBalanceAmountData(balance);
-  //     } catch (error) {
-  //       console.error("Error fetching balance:", error.response ? error.response.data : error.message);
-  //       toast('Failed to fetch balance');
-  //     }
-  //   };
+        setBalanceAmountData(balance);
+      } catch (error) {
+        console.error("Error fetching balance:", error.response ? error.response.data : error.message);
+        toast('Failed to fetch balance');
+      }
+    };
 
-  //   fetchBalance();
-  //   const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
+    fetchBalance();
+    const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
 
-  //   return () => clearInterval(intervalId);
-  // }, [keysData.publicKey, keysData.type]);   
-
+    return () => clearInterval(intervalId);
+  }, [keysData.publicKey, keysData.type]);
+  
   const handleOpenModalClickPublicKey = (header, data) => {
     setModalHeader(header);
     setModalBody(<Textarea value={data} />);
