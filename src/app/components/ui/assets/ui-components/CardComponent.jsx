@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, CardBody, Button, Tooltip, CardHeader, Textarea, Input } from "@nextui-org/react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react";
+import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure,Pagination } from "@nextui-org/react";
 import Image from "next/image";
 import { Key, Landmark, Lock, SendIcon } from "lucide-react";
 import { toast } from 'sonner';
@@ -17,59 +17,60 @@ export default function CardComponent({ image, keysData, index }) {
   const [balanceAmountData, setBalanceAmountData] = useState(0);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [message, setMessage] = useState('');
+  const [recipientAddress, setRecipientAddress] = useState('');
 
-  useEffect(() => {
-    const fetchBalance = async () => {
-      try {
-        let url = '';
-        let requestBody = {};
+  // useEffect(() => {
+  //   const fetchBalance = async () => {
+  //     try {
+  //       let url = '';
+  //       let requestBody = {};
 
-        if (keysData.type === 'solana') {
-          url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
-          requestBody = {
-            jsonrpc: "2.0",
-            id: 1,
-            method: "getBalance",
-            params: [keysData.publicKey],
-          };
-        } else if (keysData.type === 'ethereum') {
-          url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
-          requestBody = {
-            id: 1,
-            jsonrpc: "2.0",
-            params: [
-              keysData.publicKey,
-              "latest"
-            ],
-            method: "eth_getBalance"
-          };
-        }
+  //       if (keysData.type === 'solana') {
+  //         url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+  //         requestBody = {
+  //           jsonrpc: "2.0",
+  //           id: 1,
+  //           method: "getBalance",
+  //           params: [keysData.publicKey],
+  //         };
+  //       } else if (keysData.type === 'ethereum') {
+  //         url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+  //         requestBody = {
+  //           id: 1,
+  //           jsonrpc: "2.0",
+  //           params: [
+  //             keysData.publicKey,
+  //             "latest"
+  //           ],
+  //           method: "eth_getBalance"
+  //         };
+  //       }
 
-        const response = await axios.post(url, requestBody);
-        let balance = 0;
+  //       const response = await axios.post(url, requestBody);
+  //       let balance = 0;
 
-        if (keysData.type === 'solana') {
-          const lamports = response.data.result.value;
-          balance = lamports / 1_000_000_000; // Convert lamports to SOL
-        } else if (keysData.type === 'ethereum') {
-          const wei = parseInt(response.data.result, 16); // Convert hex to decimal
-          balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
-        }
+  //       if (keysData.type === 'solana') {
+  //         const lamports = response.data.result.value;
+  //         balance = lamports / 1_000_000_000; // Convert lamports to SOL
+  //       } else if (keysData.type === 'ethereum') {
+  //         const wei = parseInt(response.data.result, 16); // Convert hex to decimal
+  //         balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
+  //       }
 
-        setBalanceAmountData(balance);
-      } catch (error) {
-        console.error("Error fetching balance:", error);
-        toast('Failed to fetch balance');
-      }
-    };
+  //       setBalanceAmountData(balance);
+  //     } catch (error) {
+  //       console.error("Error fetching balance:", error);
+  //       toast('Failed to fetch balance');
+  //     }
+  //   };
 
-    // Fetch balance immediately and then set up interval
-    fetchBalance();
-    const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
+  //   // Fetch balance immediately and then set up interval
+  //   fetchBalance();
+  //   const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
 
-    // Clear the interval when the component is unmounted
-    return () => clearInterval(intervalId);
-  }, [keysData.publicKey, keysData.type]);
+  //   // Clear the interval when the component is unmounted
+  //   return () => clearInterval(intervalId);
+  // }, [keysData.publicKey, keysData.type]);
 
   const handleOpenModalClickPublicKey = (header, data) => {
     setModalHeader(header);
@@ -119,17 +120,67 @@ export default function CardComponent({ image, keysData, index }) {
     onOpen();
   };
 
-  const handleOpenModalClickSeeTransaction = async (modalHeader,modalBody) => {
+  const handleOpenModalClickSeeTransaction = async (modalHeader) => {
     setModalHeader(modalHeader);
     setModalBody('Loading transactions...');
-
+  
     onOpen();
-
+  
     try {
       const transactions = await fetchTransactionHistory(keysData.publicKey, keysData.type);
-      setModalBody(
-        <div>
-          {transactions.length > 0 ? (
+  
+      if (transactions.length === 0) {
+        setModalBody(<p>No transactions found.</p>);
+      } else if (transactions.length > 5) {
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        const totalPages = Math.ceil(transactions.length / itemsPerPage);
+  
+        const paginate = (pageNumber) => {
+          const startIndex = (pageNumber - 1) * itemsPerPage;
+          const endIndex = startIndex + itemsPerPage;
+          return transactions.slice(startIndex, endIndex);
+        };
+  
+        setModalBody(
+          <div>
+            <ul>
+              {paginate(currentPage).map((tx, index) => (
+                <li key={index}>
+                  <pre>{JSON.stringify(tx, null, 2)}</pre>
+                </li>
+              ))}
+            </ul>
+            <Pagination
+              total={totalPages}
+              initialPage={currentPage}
+              onChange={(page) => {
+                currentPage = page;
+                setModalBody(
+                  <div>
+                    <ul>
+                      {paginate(currentPage).map((tx, index) => (
+                        <li key={index}>
+                          <pre>{JSON.stringify(tx, null, 2)}</pre>
+                        </li>
+                      ))}
+                    </ul>
+                    <Pagination
+                      total={totalPages}
+                      initialPage={currentPage}
+                      onChange={(page) => {
+                        currentPage = page;
+                      }}
+                    />
+                  </div>
+                );
+              }}
+            />
+          </div>
+        );
+      } else {
+        setModalBody(
+          <div>
             <ul>
               {transactions.map((tx, index) => (
                 <li key={index}>
@@ -137,14 +188,37 @@ export default function CardComponent({ image, keysData, index }) {
                 </li>
               ))}
             </ul>
-          ) : (
-            <p>No transactions found.</p>
-          )}
-        </div>
-      );
+          </div>
+        );
+      }
     } catch (error) {
       setModalBody('Failed to load transactions.');
       console.error("Error fetching transactions:", error);
+    }
+  };
+
+  const handleSendAmount = async () => {
+    if (amountToSend <= balanceAmountData && amountToSend > 0) {
+      if (!recipientAddress) {
+        toast('Please enter a recipient address');
+        return;
+      }
+
+      let success = false;
+
+      if (keysData.type === 'solana') {
+        success = await sendSolana(keysData.secretKey, recipientAddress, amountToSend);
+      } else if (keysData.type === 'Ethereum') {
+        success = await sendEthereum(keysData.secretKey,recipientAddress, amountToSend);
+      }
+
+      if (success) {
+        onClose();
+      }
+    } else if (amountToSend <= 0) {
+      toast('Please enter a valid amount');
+    } else {
+      toast('Cannot send more than the available balance');
     }
   };
 
@@ -309,27 +383,28 @@ export default function CardComponent({ image, keysData, index }) {
                         }}
                       />
                       <div className="mt-2">
-                      <Input
-                        type="text"
-                        label="Message"
-                        placeholder="Type you message"
-                        value={message}
-                        onValueChange={setMessage}
-                      />
+                        <Input
+                          type="text"
+                          label="Recipient Address"
+                          placeholder="Enter recipient public key"
+                          value={recipientAddress}
+                          onValueChange={setRecipientAddress}
+                        />
+                      </div>
+                      <div className="mt-2">
+                        <Input
+                          type="text"
+                          label="Message"
+                          placeholder="Type your message"
+                          value={message}
+                          onValueChange={setMessage}
+                        />
                       </div>
                     </div>
                     <div>
                       <Button
                         color="success"
-                        onPress={() => {
-                          if (amountToSend <= balanceAmountData && amountToSend > 0) {
-                            onClose();
-                          } else if (amountToSend <= 0) {
-                            toast('Please enter a valid amount');
-                          } else {
-                            toast('Cannot send more than the available balance');
-                          }
-                        }}
+                        onPress={handleSendAmount}
                       >
                         Send
                       </Button>
