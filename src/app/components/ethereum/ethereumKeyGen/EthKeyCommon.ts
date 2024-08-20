@@ -103,7 +103,7 @@ function generateEthereumWallet({state, mnemonic }: KeyGenerateProps = {}) {
     const hdwallet = EthereumHDKey.fromMasterSeed(seed);
 
     // Use the BIP-44 derivation path for Ethereum
-    const derivationPath = "m/44'/60'/0'/0/0";
+    const derivationPath = `m/44'/60'/${state}'/0/0`;
     const walletNode = hdwallet.derivePath(derivationPath);
     const keypair = walletNode.getWallet();
 

@@ -1,18 +1,75 @@
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Card, CardBody, Button, Tooltip, CardHeader, Textarea, Input } from "@nextui-org/react";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@nextui-org/react";
 import Image from "next/image";
 import { Key, Landmark, Lock, SendIcon } from "lucide-react";
-import { useState } from "react";
 import { toast } from 'sonner';
 import CryptoJS from 'crypto-js';
+import { fetchTransactionHistory } from "@/app/components/utils/transactionUtils";
 
-export default function CardComponent({ image, BalanceAmountData, keysData, index }) {
+export default function CardComponent({ image, keysData, index }) {
   const [modalHeader, setModalHeader] = useState('');
   const [modalBody, setModalBody] = useState('');
   const [passValue, setPassValue] = useState('');
   const [pkData, setpkData] = useState('');
   const [amountToSend, setAmountToSend] = useState(0.00);
+  const [balanceAmountData, setBalanceAmountData] = useState(0);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        let url = '';
+        let requestBody = {};
+
+        if (keysData.type === 'solana') {
+          url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+          requestBody = {
+            jsonrpc: "2.0",
+            id: 1,
+            method: "getBalance",
+            params: [keysData.publicKey],
+          };
+        } else if (keysData.type === 'ethereum') {
+          url = `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+          requestBody = {
+            id: 1,
+            jsonrpc: "2.0",
+            params: [
+              keysData.publicKey,
+              "latest"
+            ],
+            method: "eth_getBalance"
+          };
+        }
+
+        const response = await axios.post(url, requestBody);
+        let balance = 0;
+
+        if (keysData.type === 'solana') {
+          const lamports = response.data.result.value;
+          balance = lamports / 1_000_000_000; // Convert lamports to SOL
+        } else if (keysData.type === 'ethereum') {
+          const wei = parseInt(response.data.result, 16); // Convert hex to decimal
+          balance = wei / 1_000_000_000_000_000_000; // Convert wei to ETH
+        }
+
+        setBalanceAmountData(balance);
+      } catch (error) {
+        console.error("Error fetching balance:", error);
+        toast('Failed to fetch balance');
+      }
+    };
+
+    // Fetch balance immediately and then set up interval
+    fetchBalance();
+    const intervalId = setInterval(fetchBalance, 5000); // Fetch every 5 seconds
+
+    // Clear the interval when the component is unmounted
+    return () => clearInterval(intervalId);
+  }, [keysData.publicKey, keysData.type]);
 
   const handleOpenModalClickPublicKey = (header, data) => {
     setModalHeader(header);
@@ -62,10 +119,33 @@ export default function CardComponent({ image, BalanceAmountData, keysData, inde
     onOpen();
   };
 
-  const handleOpenModalClickSeeTransaction = (modalHeader, modalBody) => {
+  const handleOpenModalClickSeeTransaction = async (modalHeader,modalBody) => {
     setModalHeader(modalHeader);
-    setModalBody(modalBody);
+    setModalBody('Loading transactions...');
+
     onOpen();
+
+    try {
+      const transactions = await fetchTransactionHistory(keysData.publicKey, keysData.type);
+      setModalBody(
+        <div>
+          {transactions.length > 0 ? (
+            <ul>
+              {transactions.map((tx, index) => (
+                <li key={index}>
+                  <pre>{JSON.stringify(tx, null, 2)}</pre>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No transactions found.</p>
+          )}
+        </div>
+      );
+    } catch (error) {
+      setModalBody('Failed to load transactions.');
+      console.error("Error fetching transactions:", error);
+    }
   };
 
   return (
@@ -113,7 +193,7 @@ export default function CardComponent({ image, BalanceAmountData, keysData, inde
           <div className="col-span-3 col-start-2 border-b-slate-400 border-1 h-16 w-full relative rounded-full flex items-center justify-center">
             <div className="text-center">
               <div className="text-tiny">Current Balance</div>
-              <div>{BalanceAmountData}</div>
+              <div>{balanceAmountData} {keysData.type === 'solana' ? 'SOL' : 'ETH'}</div>
             </div>
           </div>
           <div className="col-span-1 flex items-center justify-center">
@@ -207,8 +287,8 @@ export default function CardComponent({ image, BalanceAmountData, keysData, inde
                 {modalHeader === 'Send Amount' && (
                   <>
                     <div>Available amount</div>
-                    <div>{BalanceAmountData}</div>
-                    <div>Remaining Amount: {BalanceAmountData - amountToSend}</div>
+                    <div>{balanceAmountData} {keysData.type === 'solana' ? 'SOL' : 'ETH'}</div>
+                    <div>Remaining Amount: {balanceAmountData - amountToSend} {keysData.type === 'solana' ? 'SOL' : 'ETH'}</div>
                     <div>
                       <Input
                         type="number"
@@ -220,7 +300,7 @@ export default function CardComponent({ image, BalanceAmountData, keysData, inde
                           if (isNaN(amount) || amount < 0) {
                             amount = 0;
                           }
-                          if (amount > BalanceAmountData) {
+                          if (amount > balanceAmountData) {
                             toast('Amount exceeds available balance');
                             amount = amountToSend;
                           } else {
@@ -228,12 +308,21 @@ export default function CardComponent({ image, BalanceAmountData, keysData, inde
                           }
                         }}
                       />
+                      <div className="mt-2">
+                      <Input
+                        type="text"
+                        label="Message"
+                        placeholder="Type you message"
+                        value={message}
+                        onValueChange={setMessage}
+                      />
+                      </div>
                     </div>
                     <div>
                       <Button
                         color="success"
                         onPress={() => {
-                          if (amountToSend <= BalanceAmountData && amountToSend > 0) {
+                          if (amountToSend <= balanceAmountData && amountToSend > 0) {
                             onClose();
                           } else if (amountToSend <= 0) {
                             toast('Please enter a valid amount');
@@ -248,7 +337,7 @@ export default function CardComponent({ image, BalanceAmountData, keysData, inde
                   </>
                 )}
                 {modalHeader === 'Transaction history' && (
-                  <div>Transactions</div>
+                  <div>{modalBody}</div>
                 )}
               </ModalBody>
               <ModalFooter>

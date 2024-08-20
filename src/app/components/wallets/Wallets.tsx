@@ -261,7 +261,7 @@ const Wallets: React.FC = () => {
       ) : (
         wallets.map((data, index) => (
           <div className='mt-10 break-words' key={index}>
-            <CardComponent image={data.type === 'solana' ? SolanaLogo : data.type === 'Ethereum' ? EthereumLogo : ''} BalanceAmountData={1.001} keysData={data} index={index} />
+            <CardComponent image={data.type === 'solana' ? SolanaLogo : data.type === 'Ethereum' ? EthereumLogo : ''} keysData={data} index={index} />
           </div>
         ))
       )}
