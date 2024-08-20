@@ -1,8 +1,11 @@
-// pages/api/fetchBalance.js
-
 import axios from 'axios';
 
 export default async function handler(req, res) {
+  // Ensure the method is POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
   const { publicKey, type } = req.body;
 
   try {
