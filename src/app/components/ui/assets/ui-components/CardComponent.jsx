@@ -16,7 +16,6 @@ export default function CardComponent({ image, keysData, index }) {
   const [amountToSend, setAmountToSend] = useState(0.00);
   const [balanceAmountData, setBalanceAmountData] = useState(0);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [message, setMessage] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
 
   // useEffect(() => {
@@ -391,7 +390,7 @@ export default function CardComponent({ image, keysData, index }) {
                           onValueChange={setRecipientAddress}
                         />
                       </div>
-                      <div className="mt-2">
+                      {/* <div className="mt-2">
                         <Input
                           type="text"
                           label="Message"
@@ -399,7 +398,7 @@ export default function CardComponent({ image, keysData, index }) {
                           value={message}
                           onValueChange={setMessage}
                         />
-                      </div>
+                      </div> */}
                     </div>
                     <div>
                       <Button
