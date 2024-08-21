@@ -36,15 +36,20 @@ interface EthereumTransactionResponse {
 
 // Utility function to convert hex to Uint8Array for Solana private keys
 function hexToUint8Array(hex: string): Uint8Array {
+  // Remove "0x" prefix if present
   if (hex.startsWith("0x")) {
     hex = hex.slice(2);
   }
-  const bytes = [];
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes.push(parseInt(hex.substr(i, 2), 16));
+
+  // Convert each pair of hex digits into a byte
+  const byteArray = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < byteArray.length; i++) {
+    byteArray[i] = parseInt(hex.substr(i * 2, 2), 16);
   }
-  return new Uint8Array(bytes);
+
+  return byteArray;
 }
+
 
 function numberToUint8Array(number: number): Uint8Array {
     const hexString = number.toString(16).padStart(2, '0');
@@ -147,24 +152,22 @@ export const fetchTransactionHistory = async (publicKey: string, type: 'solana' 
 // Function to send Solana
 export const sendSolana = async (privateKeyHex: string, recipientAddress: string, amountToSend: number) => {
   try {
+    const connection = new Connection("https://api.mainnet.solana.com", 'confirmed');
     const privateKey = hexToUint8Array(privateKeyHex); // Convert the hex key to Uint8Array
-
-    const connection = new Connection("https://api.mainnet-beta.solana.com");
     const fromKeypair = Keypair.fromSecretKey(privateKey); // Create Keypair from private key
-    const fromPubKey = fromKeypair.publicKey;
     const toPubKey = new PublicKey(recipientAddress);
 
     const transaction = new Transaction().add(
       SystemProgram.transfer({
-        fromPubkey: fromPubKey,
+        fromPubkey: fromKeypair.publicKey,
         toPubkey: toPubKey,
         lamports: Math.floor(amountToSend * 1_000_000_000), // Convert SOL to Lamports
       })
     );
 
-    const { blockhash } = await connection.getRecentBlockhash();
+    const blockhash = (await connection.getLatestBlockhash('finalized')).blockhash
     transaction.recentBlockhash = blockhash;
-    transaction.feePayer = fromPubKey;
+    transaction.feePayer = fromKeypair.publicKey;
 
     // Sign the transaction with the Keypair
     transaction.sign(fromKeypair);
@@ -173,9 +176,13 @@ export const sendSolana = async (privateKeyHex: string, recipientAddress: string
     const serializedTransaction = transaction.serialize();
 
     // Send the serialized transaction
-    const signature = await connection.sendRawTransaction(serializedTransaction);
+    const signature = await connection.sendRawTransaction(serializedTransaction, { skipPreflight: false });
 
-    await connection.confirmTransaction(signature);
+    const confirmation = await connection.confirmTransaction(signature, 'finalized');
+    if (confirmation.value.err) {
+      throw new Error(`Transaction failed: ${confirmation.value.err}`);
+    }
+
     toast('Transaction successful!');
     return true;
   } catch (error) {

@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Key, Landmark, Lock, SendIcon } from "lucide-react";
 import { toast } from 'sonner';
 import CryptoJS from 'crypto-js';
-import { fetchTransactionHistory } from "@/app/components/utils/transactionUtils";
+import { fetchTransactionHistory,sendSolana, sendEthereum } from "@/app/components/utils/transactionUtils";
 
 export default function CardComponent({ image, keysData, index }) {
   const [modalHeader, setModalHeader] = useState('');
@@ -100,81 +100,47 @@ export default function CardComponent({ image, keysData, index }) {
   const handleOpenModalClickSeeTransaction = async (modalHeader) => {
     setModalHeader(modalHeader);
     setModalBody('Loading transactions...');
-  
+
     onOpen();
-  
+
     try {
-      const transactions = await fetchTransactionHistory(keysData.publicKey, keysData.type);
-  
-      if (transactions.length === 0) {
-        setModalBody(<p>No transactions found.</p>);
-      } else if (transactions.length > 5) {
-        let currentPage = 1;
-        const itemsPerPage = 5;
-        const totalPages = Math.ceil(transactions.length / itemsPerPage);
-  
-        const paginate = (pageNumber) => {
-          const startIndex = (pageNumber - 1) * itemsPerPage;
-          const endIndex = startIndex + itemsPerPage;
-          return transactions.slice(startIndex, endIndex);
-        };
-  
-        setModalBody(
-          <div>
-            <ul>
-              {paginate(currentPage).map((tx, index) => (
-                <li key={index}>
-                  <pre>{JSON.stringify(tx, null, 2)}</pre>
-                </li>
-              ))}
-            </ul>
-            <Pagination
-              total={totalPages}
-              initialPage={currentPage}
-              onChange={(page) => {
-                currentPage = page;
-                setModalBody(
-                  <div>
-                    <ul>
-                      {paginate(currentPage).map((tx, index) => (
-                        <li key={index}>
-                          <pre>{JSON.stringify(tx, null, 2)}</pre>
-                        </li>
-                      ))}
-                    </ul>
-                    <Pagination
-                      total={totalPages}
-                      initialPage={currentPage}
-                      onChange={(page) => {
-                        currentPage = page;
-                      }}
-                    />
-                  </div>
-                );
-              }}
-            />
-          </div>
-        );
-      } else {
-        setModalBody(
-          <div>
-            <ul>
-              {transactions.map((tx, index) => (
-                <li key={index}>
-                  <pre>{JSON.stringify(tx, null, 2)}</pre>
-                </li>
-              ))}
-            </ul>
-          </div>
+        const transactions = await fetchTransactionHistory(keysData.publicKey, keysData.type);
+
+        if (transactions.length === 0) {
+            setModalBody(<p>No transactions found.</p>);
+        } else {
+          setModalBody(
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transaction ID</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount Transferred (SOL)</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sender</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recipient</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {transactions.map((tx) => (
+                            <tr key={tx.transaction.signatures[0]}>
+                                <td className="px-6 py-4 whitespace-normal text-sm font-medium text-gray-900 break-words">{tx.transaction.signatures[0]}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{(tx.transaction.message.instructions[0].parsed.info.lamports / 1000000000).toFixed(4)}</td>
+                                <td className="px-6 py-4 whitespace-normal text-sm text-gray-500 break-words">{tx.transaction.message.accountKeys[0].pubkey}</td>
+                                <td className="px-6 py-4 whitespace-normal text-sm text-gray-500 break-words">{tx.transaction.message.accountKeys[1].pubkey}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         );
       }
     } catch (error) {
-      setModalBody('Failed to load transactions.');
-      console.error("Error fetching transactions:", error);
+        setModalBody('Failed to load transactions.');
+        console.error("Error fetching transactions:", error);
     }
-  };
+};
 
-  const handleSendAmount = async () => {
+  const handleSendAmount = async (onClose) => {
     if (amountToSend <= balanceAmountData && amountToSend > 0) {
       if (!recipientAddress) {
         toast('Please enter a recipient address');
@@ -381,7 +347,7 @@ export default function CardComponent({ image, keysData, index }) {
                     <div>
                       <Button
                         color="success"
-                        onPress={handleSendAmount}
+                        onPress={()=>handleSendAmount(onClose)}
                       >
                         Send
                       </Button>
