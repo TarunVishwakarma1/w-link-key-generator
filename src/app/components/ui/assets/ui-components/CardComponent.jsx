@@ -17,6 +17,7 @@ export default function CardComponent({ image, keysData, index }) {
   const [balanceAmountData, setBalanceAmountData] = useState(0);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [recipientAddress, setRecipientAddress] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -141,23 +142,27 @@ export default function CardComponent({ image, keysData, index }) {
 };
 
   const handleSendAmount = async (onClose) => {
+    
     if (amountToSend <= balanceAmountData && amountToSend > 0) {
       if (!recipientAddress) {
         toast('Please enter a recipient address');
         return;
       }
-
+      setIsLoading(true);
       let success = false;
 
       if (keysData.type === 'solana') {
         success = await sendSolana(keysData.secretKey, recipientAddress, amountToSend);
+        setIsLoading(false)
       } else if (keysData.type === 'Ethereum') {
         success = await sendEthereum(keysData.secretKey,recipientAddress, amountToSend);
+        setIsLoading(false)
       }
-
       if (success) {
+        setIsLoading(false)
         onClose();
       }
+      setIsLoading(false)
     } else if (amountToSend <= 0) {
       toast('Please enter a valid amount');
     } else {
@@ -249,6 +254,7 @@ export default function CardComponent({ image, keysData, index }) {
                 radius="full"
                 variant="light"
                 color="primary"
+                isLoading={isLoading}
                 onPress={() => handleOpenModalClickSendMoney('Send Amount', 'Demo')}
               >
                 <SendIcon />
@@ -347,6 +353,7 @@ export default function CardComponent({ image, keysData, index }) {
                     <div>
                       <Button
                         color="success"
+                        isLoading={isLoading}
                         onPress={()=>handleSendAmount(onClose)}
                       >
                         Send

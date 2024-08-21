@@ -15,6 +15,19 @@ Just set the password and you are in!
 
 for visiting the second time just putup your set pin.
 
+
+Generate your wallets and you can send or recieve transactions easily by clicking on the `send button`
+
+![Logo](./src/ReadMEContent/ssTransaction.png)
+
+Your wallet always shows the real time data to you with the details of transaction. 
+
+To see the transaction details just click on the `bank icon`
+
+![Logo](./src/ReadMEContent/TransactionDetails.png)
+
+Scroll the modal to see other details like `Amount Transferred`, `Sender ID`, `Recipient ID`.
+
 ## Features
 
 - **Generate Solana and Ethereum Wallets**: Easily create new Solana or Ethereum wallet with a single click.
