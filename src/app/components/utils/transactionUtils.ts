@@ -60,7 +60,8 @@ function numberToUint8Array(number: number): Uint8Array {
 
 // Solana Transactions
 export const getSolanaTransactions = async (publicKey: string): Promise<string[]> => {
-  const url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+  const urll = process.env.NEXT_PUBLIC_ENVIRONMET==='local'? process.env.NEXT_PUBLIC_ALCHEMY_DEVNET_SOLANA_API:process.env.NEXT_PUBLIC_ALCHEMY_SOLANA_API;
+  const url = `${urll}${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
   const requestBody = {
     jsonrpc: "2.0",
     id: 1,
@@ -80,7 +81,8 @@ export const getSolanaTransactions = async (publicKey: string): Promise<string[]
 };
 
 export const getSolanaTransactionDetails = async (signatures: string[]): Promise<any[]> => {
-  const url = `https://solana-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+  const urll = process.env.NEXT_PUBLIC_ENVIRONMET=='local'? process.env.NEXT_PUBLIC_ALCHEMY_DEVNET_SOLANA_API:process.env.NEXT_PUBLIC_ALCHEMY_SOLANA_API;
+  const url = `${urll}${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
   const transactionDetails: any[] = [];
 
   try {
@@ -152,7 +154,9 @@ export const fetchTransactionHistory = async (publicKey: string, type: 'solana' 
 // Function to send Solana
 export const sendSolana = async (privateKeyHex: string, recipientAddress: string, amountToSend: number) => {
   try {
-    const connection = new Connection("https://api.mainnet.solana.com", 'confirmed');
+    const connectionURL = process.env.NEXT_PUBLIC_ENVIRONMET==='local'?process.env.NEXT_PUBLIC_SOLANA_DEVNET_API:process.env.NEXT_PUBLIC_SOLANA_MAINNET_API;
+
+    const connection = new Connection(`${connectionURL}`, 'confirmed');
     const privateKey = hexToUint8Array(privateKeyHex); // Convert the hex key to Uint8Array
     const fromKeypair = Keypair.fromSecretKey(privateKey); // Create Keypair from private key
     const toPubKey = new PublicKey(recipientAddress);

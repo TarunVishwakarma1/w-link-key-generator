@@ -9,7 +9,8 @@ export async function POST(request) {
     let requestBody = {};
 
     if (type === 'solana') {
-      url = `https://solana-devnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
+      const urll = process.env.NEXT_PUBLIC_ENVIRONMET=='local'?process.env.NEXT_PUBLIC_ALCHEMY_DEVNET_SOLANA_API:process.env.NEXT_PUBLIC_ALCHEMY_SOLANA_API;
+      url = `${urll}${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`;
       requestBody = {
         jsonrpc: "2.0",
         id: 1,
