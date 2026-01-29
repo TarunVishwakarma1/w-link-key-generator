@@ -12,12 +12,19 @@ interface MobileNavProps {
 
 const MobileNav: React.FC<MobileNavProps> = ({ onSelect, selected }) => {
     const { theme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const items = [
         { name: 'Wallets', key: 'wallet', icon: Wallet },
         { name: 'Solana', key: 'solana', icon: Zap },
         { name: 'Ethereum', key: 'ethereum', icon: Layers },
     ];
+
+    if (!mounted) return null;
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:hidden pointer-events-none">
