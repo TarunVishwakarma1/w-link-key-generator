@@ -18,27 +18,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-    <head/>
-    <body className={inter.className}>
-    <div className="h-[50rem] w-full dark:bg-black bg-white  dark:bg-grid-white/[0.1] bg-grid-black/[0.1] relative dark:text-white text-black">
-      {/* Radial gradient for the container to give a faded look */}
-      {/* <div className="absolute pointer-events-none inset-0  dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_15%,black)]"></div> */}
-      
-    <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-    >
-      <div className="relative">
-      <Navbar/>
-      </div>
-      {children}
-      {/* <Toaster/> */}
-    </ThemeProvider>
-    </div>
-    <Toaster />
-    </body>
+      <head />
+      <body className={inter.className}>
+        <div className="min-h-screen w-full dark:bg-black bg-white dark:bg-grid-white/[0.1] bg-grid-black/[0.1] relative dark:text-white text-black">
+          {/* Radial gradient for the container to give a faded look */}
+          {/* <div className="absolute pointer-events-none inset-0  dark:bg-black bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_15%,black)]"></div> */}
+
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <div className="relative z-50">
+              <Navbar />
+            </div>
+            {children}
+          </ThemeProvider>
+        </div>
+        <Toaster />
+      </body>
     </html>
   );
 }

@@ -193,45 +193,53 @@ const Solana = (props: Props) => {
   };
 
   return (
-    <div className="grid grid-cols-4 gap-4 p-4">
-      <div className="text-4xl font-semibold col-span-4">Solana Wallet Generator</div>
-      <div className="col-span-3 flex items-center">
+    <div className="flex flex-col gap-6 p-4 max-w-full">
+      <div className="text-2xl md:text-4xl font-semibold w-full text-center md:text-left">Solana Wallet Generator</div>
+      <div className="flex flex-col md:flex-row items-end md:items-center gap-4 w-full">
         <Input
-          label="Type your mnemonic here to generate a wallet or leave it blank"
-          variant="underlined"
+          label="Mnemonic (Optional)"
+          placeholder="Enter mnemonic or leave blank"
+          variant="bordered"
           radius="md"
           size="lg"
-          className="flex-1"
+          className="w-full md:flex-1"
           onChange={(e) => setSolValue(e.target.value)}
         />
         <Input
           isRequired
           label="Wallet Name"
-          variant="underlined"
+          placeholder="My Wallet"
+          variant="bordered"
           radius="md"
           size="lg"
-          className="flex-1 ml-4"
+          className="w-full md:flex-1"
           value={walletName}
           onChange={(e) => setWalletName(e.target.value)}
         />
-        <div className="col-span-1 flex items-center justify-center">
-          <Button color="primary" onClick={handleKeyGeneration}>
-            Generate
-          </Button>
-        </div>
+        <Button
+          color="primary"
+          size="lg"
+          onClick={handleKeyGeneration}
+          className="w-full md:w-auto font-semibold shadow-lg shadow-primary/20"
+        >
+          Generate
+        </Button>
       </div>
-      <div className="mt-5" />
-      {keyValues?.mnemonic &&
-        keyValues.mnemonic.split(' ').map((data, index) => (
-          <motion.div key={index} variants={itemVariants} initial="hidden" animate="visible">
-            <Card className="bg-gradient-to-r from-pink-50 via-purple-50 to-violet-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600">
-              <CardBody className="p-4">
-                <p className="text-gray-700 dark:text-gray-300">{index + 1}.</p>
-                <p className="flex items-center justify-center text-gray-900 dark:text-gray-100">{data}</p>
-              </CardBody>
-            </Card>
-          </motion.div>
-        ))}
+      <div className="mt-2" />
+      {keyValues?.mnemonic && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 w-full">
+          {keyValues.mnemonic.split(' ').map((data, index) => (
+            <motion.div key={index} variants={itemVariants} initial="hidden" animate="visible">
+              <Card className="bg-gradient-to-r from-pink-50 via-purple-50 to-violet-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 shadow-sm hover:shadow-md transition-shadow">
+                <CardBody className="p-3 text-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{index + 1}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{data}</p>
+                </CardBody>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {keyValues?.mnemonic && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }} className="w-full">
@@ -247,12 +255,11 @@ const Solana = (props: Props) => {
       )}
 
       {wallets.map((data, index) => (
-        <div className="col-span-4" key={index}>
+        <div className="w-full" key={index}>
           <Card className="relative p-4 rounded-lg shadow-md">
             <div
-              className={`absolute inset-0 rounded-lg bg-gradient-to-r ${
-                theme === 'dark' ? 'from-gray-800 via-purple-900 to-gray-800' : 'from-purple-50 via-blue-50 to-purple-50'
-              } opacity-75`}
+              className={`absolute inset-0 rounded-lg bg-gradient-to-r ${theme === 'dark' ? 'from-gray-800 via-purple-900 to-gray-800' : 'from-purple-50 via-blue-50 to-purple-50'
+                } opacity-75`}
             />
             <CardHeader className="relative z-10 flex justify-between items-center">
               <div className="p-2 rounded-lg dark:bg-black bg-slate-300">

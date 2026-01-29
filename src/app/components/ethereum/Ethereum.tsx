@@ -184,45 +184,53 @@ const Ethereum: React.FC = () => {
   };
 
   return (
-    <div className="grid grid-cols-4 gap-4 p-4">
-      <div className="text-4xl font-semibold col-span-4">Ethereum Wallet Generator</div>
-      <div className="col-span-3 flex items-center">
+    <div className="flex flex-col gap-6 p-4 max-w-full">
+      <div className="text-2xl md:text-4xl font-semibold w-full text-center md:text-left">Ethereum Wallet Generator</div>
+      <div className="flex flex-col md:flex-row items-end md:items-center gap-4 w-full">
         <Input
-          label="Type your mnemonic here to generate a wallet or leave it blank"
-          variant="underlined"
+          label="Mnemonic (Optional)"
+          placeholder="Enter mnemonic or leave blank"
+          variant="bordered"
           radius="md"
           size="lg"
-          className="flex-1"
+          className="w-full md:flex-1"
           onChange={(e) => setEthValue(e.target.value)}
         />
         <Input
           isRequired
           label="Wallet Name"
-          variant="underlined"
+          placeholder="My Wallet"
+          variant="bordered"
           radius="md"
           size="lg"
-          className="flex-1 ml-4"
+          className="w-full md:flex-1"
           value={walletName}
           onChange={(e) => setWalletName(e.target.value)}
         />
-        <div className="col-span-1 flex items-center justify-center">
-          <Button color="primary" onClick={handleKeyGeneration}>
-            Generate
-          </Button>
-        </div>
+        <Button
+          color="primary"
+          size="lg"
+          onClick={handleKeyGeneration}
+          className="w-full md:w-auto font-semibold shadow-lg shadow-primary/20"
+        >
+          Generate
+        </Button>
       </div>
-      <div className="mt-5" />
-      {keyValues?.mnemonic &&
-        keyValues.mnemonic.split(' ').map((data, index) => (
-          <motion.div key={index} variants={itemVariants} initial="hidden" animate="visible">
-            <Card className="bg-gradient-to-r from-pink-50 via-purple-50 to-violet-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600">
-              <CardBody className="p-4">
-                <p className="text-gray-700 dark:text-gray-300">{index + 1}.</p>
-                <p className="flex items-center justify-center text-gray-900 dark:text-gray-100">{data}</p>
-              </CardBody>
-            </Card>
-          </motion.div>
-        ))}
+      <div className="mt-2" />
+      {keyValues?.mnemonic && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 w-full">
+          {keyValues.mnemonic.split(' ').map((data, index) => (
+            <motion.div key={index} variants={itemVariants} initial="hidden" animate="visible">
+              <Card className="bg-gradient-to-r from-pink-50 via-purple-50 to-violet-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600 shadow-sm hover:shadow-md transition-shadow">
+                <CardBody className="p-3 text-center">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{index + 1}</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">{data}</p>
+                </CardBody>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
 
       {keyValues?.mnemonic && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: 'easeOut' }} className="w-full">
@@ -238,107 +246,106 @@ const Ethereum: React.FC = () => {
       )}
 
       {wallets.map((data, index) => (
-        <div className="col-span-4" key={index}>
-<Card className="relative p-4 rounded-lg shadow-md">
-  <div
-    className={`absolute inset-0 rounded-lg bg-gradient-to-r ${
-      theme === 'dark' ? 'from-gray-800 via-blue-900 to-gray-800' : 'from-blue-50 via-indigo-50 to-blue-50'
-    } opacity-75`}
-  />
-  <CardHeader className="relative z-10 flex justify-between items-center">
-    <div className="p-2 rounded-lg dark:bg-black bg-slate-300">
-      <Image src={EthereumImage} alt="ethereumLogo" width={20} height={20} />
-    </div>
-    <div className="font-semibold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 dark:from-blue-500 dark:to-indigo-500">
-      {data.walletName || `Ethereum Wallet ${index + 1}`}
-    </div>
-    <div className="flex justify-end">
-      <Button
-        color="danger"
-        variant="bordered"
-        className="flex gap-2 items-center"
-        startContent={<Trash className="size-4 text-destructive" />}
-        onPress={() => {
-          setDeleteIndex(index);
-          onOpenChange();
-        }}
-      >
-        Delete Wallet
-      </Button>
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="text-black dark:text-white">
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader>Delete Wallet?</ModalHeader>
-              <ModalBody>
-                <p>
-                  Are you sure you want to delete this wallet? Make sure to download this wallet if you ever need to restore the
-                  wallet.
-                </p>
-              </ModalBody>
-              <ModalFooter>
-                <Button color="primary" onPress={onClose}>
-                  No
+        <div className="w-full" key={index}>
+          <Card className="relative p-4 rounded-lg shadow-md">
+            <div
+              className={`absolute inset-0 rounded-lg bg-gradient-to-r ${theme === 'dark' ? 'from-gray-800 via-blue-900 to-gray-800' : 'from-blue-50 via-indigo-50 to-blue-50'
+                } opacity-75`}
+            />
+            <CardHeader className="relative z-10 flex justify-between items-center">
+              <div className="p-2 rounded-lg dark:bg-black bg-slate-300">
+                <Image src={EthereumImage} alt="ethereumLogo" width={20} height={20} />
+              </div>
+              <div className="font-semibold text-2xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-blue-400 dark:from-blue-500 dark:to-indigo-500">
+                {data.walletName || `Ethereum Wallet ${index + 1}`}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  color="danger"
+                  variant="bordered"
+                  className="flex gap-2 items-center"
+                  startContent={<Trash className="size-4 text-destructive" />}
+                  onPress={() => {
+                    setDeleteIndex(index);
+                    onOpenChange();
+                  }}
+                >
+                  Delete Wallet
                 </Button>
-                <Button color="danger" variant="light" onPress={() => handleDelete()}>
-                  Delete
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
-    </div>
-  </CardHeader>
-  <CardBody className="relative z-10 text-black dark:text-white">
-    <div>
-      <Input label="Public Key" variant="underlined" type="text" readOnly value={data.publicKey} />
-    </div>
-    <div className="m-2" />
-    <div>
-      <Input
-        label="Private Key"
-        variant="underlined"
-        type={visibility[index]?.private ? 'text' : 'password'}
-        readOnly
-        value={data.secretKey}
-        endContent={
-          <button className="focus:outline-none" type="button" onClick={() => toggleVisibility(index, 'private')} aria-label="toggle password visibility">
-            {visibility[index]?.private ? (
-              <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-            ) : (
-              <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-            )}
-          </button>
-        }
-      />
-    </div>
-    <div className="m-2" />
-    <div>
-      <Input
-        label="Secret Phrase"
-        variant="underlined"
-        type={visibility[index]?.mnemonic ? 'text' : 'password'}
-        readOnly
-        value={data.mnemonic}
-        endContent={
-          <button className="focus:outline-none" type="button" onClick={() => toggleVisibility(index, 'mnemonic')} aria-label="toggle password visibility">
-            {visibility[index]?.mnemonic ? (
-              <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-            ) : (
-              <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
-            )}
-          </button>
-        }
-      />
-    </div>
-  </CardBody>
-  <CardFooter className="relative z-10 text-black dark:text-white">
-    <Button color="primary" onPress={() => handleDownloadWallet(data)}>
-      Download Wallet
-    </Button>
-  </CardFooter>
-</Card>
+                <Modal isOpen={isOpen} onOpenChange={onOpenChange} className="text-black dark:text-white">
+                  <ModalContent>
+                    {(onClose) => (
+                      <>
+                        <ModalHeader>Delete Wallet?</ModalHeader>
+                        <ModalBody>
+                          <p>
+                            Are you sure you want to delete this wallet? Make sure to download this wallet if you ever need to restore the
+                            wallet.
+                          </p>
+                        </ModalBody>
+                        <ModalFooter>
+                          <Button color="primary" onPress={onClose}>
+                            No
+                          </Button>
+                          <Button color="danger" variant="light" onPress={() => handleDelete()}>
+                            Delete
+                          </Button>
+                        </ModalFooter>
+                      </>
+                    )}
+                  </ModalContent>
+                </Modal>
+              </div>
+            </CardHeader>
+            <CardBody className="relative z-10 text-black dark:text-white">
+              <div>
+                <Input label="Public Key" variant="underlined" type="text" readOnly value={data.publicKey} />
+              </div>
+              <div className="m-2" />
+              <div>
+                <Input
+                  label="Private Key"
+                  variant="underlined"
+                  type={visibility[index]?.private ? 'text' : 'password'}
+                  readOnly
+                  value={data.secretKey}
+                  endContent={
+                    <button className="focus:outline-none" type="button" onClick={() => toggleVisibility(index, 'private')} aria-label="toggle password visibility">
+                      {visibility[index]?.private ? (
+                        <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      ) : (
+                        <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      )}
+                    </button>
+                  }
+                />
+              </div>
+              <div className="m-2" />
+              <div>
+                <Input
+                  label="Secret Phrase"
+                  variant="underlined"
+                  type={visibility[index]?.mnemonic ? 'text' : 'password'}
+                  readOnly
+                  value={data.mnemonic}
+                  endContent={
+                    <button className="focus:outline-none" type="button" onClick={() => toggleVisibility(index, 'mnemonic')} aria-label="toggle password visibility">
+                      {visibility[index]?.mnemonic ? (
+                        <EyeSlashFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      ) : (
+                        <EyeFilledIcon className="text-2xl text-default-400 pointer-events-none" />
+                      )}
+                    </button>
+                  }
+                />
+              </div>
+            </CardBody>
+            <CardFooter className="relative z-10 text-black dark:text-white">
+              <Button color="primary" onPress={() => handleDownloadWallet(data)}>
+                Download Wallet
+              </Button>
+            </CardFooter>
+          </Card>
 
         </div>
       ))}

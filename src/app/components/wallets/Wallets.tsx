@@ -58,38 +58,38 @@ const Wallets: React.FC = () => {
   const handleBackup = async () => {
     const storedSolanaWallets = localStorage.getItem(SOLANA_STORAGE_KEY);
     const storedEthereumWallets = localStorage.getItem(ETHEREUM_STORAGE_KEY);
-  
+
     // If there are no wallets in local storage, show an error message
     if (!storedSolanaWallets && !storedEthereumWallets) {
       toast.error('No wallets found to backup.');
       return;
     }
-  
+
     try {
       // Decrypt the stored wallets if they exist, otherwise initialize as empty arrays
       const solanaWallets = storedSolanaWallets
         ? JSON.parse(await decryptWallets(storedSolanaWallets, localStorage.getItem(PASSWORD_STORAGE_KEY)!))
         : [];
-  
+
       const ethereumWallets = storedEthereumWallets
         ? JSON.parse(await decryptWallets(storedEthereumWallets, localStorage.getItem(PASSWORD_STORAGE_KEY)!))
         : [];
-  
+
       // Check if both arrays are empty
       if (solanaWallets.length === 0 && ethereumWallets.length === 0) {
         toast.error('No wallets found to backup.');
         return;
       }
-  
+
       // Combine the wallets into a single object
       const combinedWallets = {
         solana: solanaWallets,
         ethereum: ethereumWallets,
       };
-  
+
       // Encrypt the combined wallets object
       const encryptedCombinedWallets = await encryptWallets(JSON.stringify(combinedWallets), localStorage.getItem(PASSWORD_STORAGE_KEY)!);
-      
+
       // Create a downloadable file from the encrypted data
       const blob = new Blob([encryptedCombinedWallets], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -100,7 +100,7 @@ const Wallets: React.FC = () => {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-  
+
       // Show a success message
       toast.success('Backup successful!');
     } catch (error) {
@@ -108,7 +108,7 @@ const Wallets: React.FC = () => {
       console.error('Backup error:', error);
     }
   };
-  
+
 
   const handleRestoreClick = () => {
     if (fileInputRef.current) {
@@ -119,28 +119,28 @@ const Wallets: React.FC = () => {
   const handleRestore = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-  
+
     if (file.type !== 'application/json') {
       toast.error('Invalid file type. Please upload a JSON file.');
       return;
     }
-  
+
     const reader = new FileReader();
     reader.onload = async () => {
       let backupEncryptedContent = reader.result as string;
       const password = localStorage.getItem(PASSWORD_STORAGE_KEY);
-  
+
       if (!password) {
         toast.error('No password found in local storage.');
         return;
       }
-  
+
       try {
         const decryptedBackupContent = JSON.parse(await decryptWallets(backupEncryptedContent, password));
         console.log(`decryptedBackupContent ${JSON.stringify(decryptedBackupContent)}`);
         let solanaBackupWallets = [];
         let ethereumBackupWallets = [];
-  
+
         if (Array.isArray(decryptedBackupContent)) {
           if (decryptedBackupContent[0].type === 'solana') {
             solanaBackupWallets = decryptedBackupContent;
@@ -152,42 +152,42 @@ const Wallets: React.FC = () => {
           solanaBackupWallets = decryptedBackupContent.solana || [];
           ethereumBackupWallets = decryptedBackupContent.ethereum || [];
         }
-  
+
         // Decrypt existing wallets or initialize as empty arrays if none exist
         const storedSolanaWallets = localStorage.getItem(SOLANA_STORAGE_KEY);
         const storedEthereumWallets = localStorage.getItem(ETHEREUM_STORAGE_KEY);
-  
+
         const currentSolanaWallets = storedSolanaWallets
           ? JSON.parse(await decryptWallets(storedSolanaWallets, password))
           : [];
-  
+
         const currentEthereumWallets = storedEthereumWallets
           ? JSON.parse(await decryptWallets(storedEthereumWallets, password))
           : [];
-  
+
         // Merge wallets and avoid duplicates
         const existingSolanaKeys = new Set(currentSolanaWallets.map((wallet: any) => wallet.secretKey));
         const newSolanaWallets = solanaBackupWallets.filter((wallet: any) => !existingSolanaKeys.has(wallet.secretKey));
         const updatedSolanaWallets = [...currentSolanaWallets, ...newSolanaWallets];
-  
+
         const existingEthereumKeys = new Set(currentEthereumWallets.map((wallet: any) => wallet.secretKey));
         const newEthereumWallets = ethereumBackupWallets.filter((wallet: any) => !existingEthereumKeys.has(wallet.secretKey));
         const updatedEthereumWallets = [...currentEthereumWallets, ...newEthereumWallets];
-  
+
         // Count of successfully restored wallets
         const restoredSolanaCount = newSolanaWallets.length;
         const restoredEthereumCount = newEthereumWallets.length;
-  
+
         // Encrypt and store the updated wallets
         const encryptedSolanaWallets = await encryptWallets(JSON.stringify(updatedSolanaWallets), password);
         const encryptedEthereumWallets = await encryptWallets(JSON.stringify(updatedEthereumWallets), password);
-  
+
         localStorage.setItem(SOLANA_STORAGE_KEY, encryptedSolanaWallets);
         localStorage.setItem(ETHEREUM_STORAGE_KEY, encryptedEthereumWallets);
-  
+
         // Update the UI with the combined wallets
         setWallets([...updatedSolanaWallets, ...updatedEthereumWallets]);
-  
+
         // Display success message with count of restored wallets
         if (restoredSolanaCount === 0 && restoredEthereumCount === 0) {
           toast('No new wallets were restored. All wallets already exist.');
@@ -200,70 +200,74 @@ const Wallets: React.FC = () => {
       }
     };
     reader.readAsText(file);
-  
+
     event.target.value = ''; // Reset the input value to allow re-uploading the same file if needed
-  };  
-  
+  };
+
   return (
-    <div className="grid grid-cols-4 gap-4 p-4">
-      <div className="text-4xl font-semibold col-span-3">
-        Your Wallets
-      </div>
-      <div className='col-start-4 col-span-1'>
-        <Button isLoading={false} color="primary" variant="shadow" onPress={handleOpenModal}>
-          Backup / Restore
-        </Button>
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange} className='text-black dark:text-white'>
-          <ModalContent>
-            {(onClose) => (
-              <>
-                <ModalHeader className="flex flex-col gap-1">Backup and Restore Wallets</ModalHeader>
-                <ModalBody>
-                  <p>
-                    Do you want to take a backup of all your wallets in a single file?
-                  </p>
-                  <Button color="primary" variant="shadow" onPress={handleBackup}>
-                    Backup
-                  </Button>
-                  <div className="mt-4">
+    <div className="flex flex-col gap-6 p-4 max-w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
+        <div className="text-2xl md:text-4xl font-semibold">
+          Your Wallets
+        </div>
+        <div className='w-full sm:w-auto'>
+          <Button isLoading={false} color="primary" variant="shadow" onPress={handleOpenModal} className="w-full sm:w-auto">
+            Backup / Restore
+          </Button>
+          <Modal isOpen={isOpen} onOpenChange={onOpenChange} className='text-black dark:text-white'>
+            <ModalContent>
+              {(onClose) => (
+                <>
+                  <ModalHeader className="flex flex-col gap-1">Backup and Restore Wallets</ModalHeader>
+                  <ModalBody>
                     <p>
-                      Do you want to restore wallets from a backup file?
+                      Do you want to take a backup of all your wallets in a single file?
                     </p>
-                    <p>Please note that the password in old wallets and password in new wallets should match or the restore will fail.</p>
-                    <Button color="primary" variant="shadow" onPress={handleRestoreClick}>
-                      Restore
+                    <Button color="primary" variant="shadow" onPress={handleBackup}>
+                      Backup
                     </Button>
-                    <input
-                      type="file"
-                      accept=".json"
-                      ref={fileInputRef}
-                      style={{ display: 'none' }}
-                      onChange={handleRestore}
-                    />
-                  </div>
-                </ModalBody>
-                <ModalFooter>
-                  <Button color="danger" variant="ghost" onPress={onClose}>
-                    Close
-                  </Button>
-                </ModalFooter>
-              </>
-            )}
-          </ModalContent>
-        </Modal>
+                    <div className="mt-4">
+                      <p>
+                        Do you want to restore wallets from a backup file?
+                      </p>
+                      <p>Please note that the password in old wallets and password in new wallets should match or the restore will fail.</p>
+                      <Button color="primary" variant="shadow" onPress={handleRestoreClick}>
+                        Restore
+                      </Button>
+                      <input
+                        type="file"
+                        accept=".json"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleRestore}
+                      />
+                    </div>
+                  </ModalBody>
+                  <ModalFooter>
+                    <Button color="danger" variant="ghost" onPress={onClose}>
+                      Close
+                    </Button>
+                  </ModalFooter>
+                </>
+              )}
+            </ModalContent>
+          </Modal>
+        </div>
       </div>
       {wallets.length === 0 ? (
-        <div className="col-span-4 flex items-center justify-center h-3/4">
-          <div className="text-center text-gray-300 dark:text-gray-600 text-4xl">
+        <div className="flex items-center justify-center h-64 w-full">
+          <div className="text-center text-gray-300 dark:text-gray-600 text-2xl md:text-4xl">
             No Wallets Here!
           </div>
         </div>
       ) : (
-        wallets.map((data, index) => (
-          <div className='mt-10 break-words' key={index}>
-            <CardComponent image={data.type === 'solana' ? SolanaLogo : data.type === 'Ethereum' ? EthereumLogo : ''} keysData={data} index={index} />
-          </div>
-        ))
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
+          {wallets.map((data, index) => (
+            <div className='break-words w-full' key={index}>
+              <CardComponent image={data.type === 'solana' ? SolanaLogo : data.type === 'Ethereum' ? EthereumLogo : ''} keysData={data} index={index} />
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
